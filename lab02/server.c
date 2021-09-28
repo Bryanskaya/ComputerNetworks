@@ -6,35 +6,68 @@
 
 
 int sock;
-int clients_arr[NUM];
 
-
-void close_socket()
+char* convert_from_10(int num, int p)
 {
-    for (int i = 0; i < NUM; i++)
-        if (clients_arr[i])
-            close(clients_arr[i]);
-    
-    close(sock);
+    char *res = (char *)malloc(70);
+    char *elem = "0123456789ABCDEF";
+    int k = 0, flag = 1 ? (num < 0) : 0;
+    char temp;
+
+    if (num == 0)
+        res[k] = elem[0];
+        
+    while (num)
+    {
+        res[k] = elem[abs(num) % p];
+        num /= p;
+        k += 1;
+    }
+
+    if (flag)
+    {
+        res[k] = '-';
+        k += 1;
+    }
+
+    for (int i = 0; i < k / 2; i++)
+    {
+        temp = res[i];
+        res[i] = res[strlen(res) - i - 1];
+        res[strlen(res) - i - 1] = temp;
+    }
+
+    return res;
 }
+
+
+void task(char *buf)
+{
+    int num = atoi(buf);
+
+    printf("10: %d\n\n", num);
+    printf(" 2: %s\n\n", convert_from_10(num, 2));
+    printf("16: %s\n\n", convert_from_10(num, 16));
+    printf(" 8: %s\n\n", convert_from_10(num, 8));
+    printf(" 3: %s\n\n", convert_from_10(num, 3));
+}
+
 
 int main()
 {
-    struct sockaddr_in serv_addr;
-    int max_fd, err, fd, new_sock, rsize, flag;
-    fd_set set;
+    struct sockaddr_in serv_addr, client_addr;
+    int rsize;
     char buf[SIZE];
 
-    sock = socket(AF_INET, SOCK_STREAM, 0);
+    sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sock < 0) 
     {
         perror("ERROR: socket failed");
         return EXIT_FAILURE;
     }
-    fcntl(sock, F_SETFL, O_NONBLOCK);
 
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    serv_addr.sin_addr.s_addr = htons(INADDR_ANY);
     serv_addr.sin_port = htons(PORT);
 
     if (bind(sock, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0) 
@@ -44,88 +77,27 @@ int main()
         return EXIT_FAILURE;
     }
 
-    if (listen(sock, NUM) < 0)
-    {
-        close(sock);
-        perror("ERROR: listen failed");
-        return EXIT_FAILURE;
-    }
-
     printf("Server was created\n");
 
     while (1)
     {
-        struct timeval interval = {30, 0};
-
-        FD_ZERO(&set);
-        FD_SET(sock, &set);
-        
-
-        max_fd = sock;
-
-        for (int i = 0; i < NUM; i++)
+        rsize = recvfrom(sock, buf, SIZE, 0, NULL, NULL);
+        if (rsize < 0)
         {
-            if (clients_arr[i] > 0)
-                FD_SET(clients_arr[i], &set);
-
-            if (clients_arr[i] > max_fd)
-                max_fd = clients_arr[i];
-        }
-
-        err = select(max_fd + 1, &set, NULL, NULL, &interval);
-        if (err < 0)
-        {
-            close_socket();
-            perror("ERROR: select failed");
+            printf("ERROR: recvfrom()\n");
+            close(sock);
             return EXIT_FAILURE;
         }
-        else if (!err)
-        {
-            close_socket();
-            printf("Time of waiting is over\n");
-            return 0;
-        }
         
-        if (FD_ISSET(sock, &set))
-        {
-            new_sock = accept(sock, NULL, NULL);
-            flag = 1;
-            if (new_sock < 0) 
-                return EXIT_FAILURE;
+        buf[rsize] = '\0';
+        printf("Server got a number: %s from %s:%d\n\n", buf, 
+            inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
-            printf("New connection added\n");
-
-            for (int i = 0; i < NUM && flag); i++) 
-            {
-                if (!clients_arr[i]) 
-                {
-                    clients_arr[i] = new_sock;
-                    flag = 0;
-                }
-            }
-        }
-
-        for (int i = 0; i < NUM; i++)
-        {
-            fd = clients_arr[i];
-            if ((fd > 0) && FD_ISSET(fd, &set))
-            {
-                rsize = recvfrom(fd, buf, SIZE, 0, NULL, NULL);
-                if (!rsize)
-                {
-                    printf("Client was disconnected\n");
-                    clients_arr[i] = 0;
-                }
-                else
-                {
-                    buf[rsize] = '\0';
-                    printf("Server got: %s\n", buf);
-                } 
-            }
-        }
+        
+        task(buf);
     }
 
-    close_socket();
+    close(sock);
 
     printf("Server was closed\n");
 

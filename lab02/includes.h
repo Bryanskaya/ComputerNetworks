@@ -6,7 +6,8 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #define HOST "localhost"
 #define PORT 2000
-#define NUM  5
