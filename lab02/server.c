@@ -55,7 +55,7 @@ void task(char *buf)
 
 int main()
 {
-    struct sockaddr_in serv_addr, client_addr;
+    struct sockaddr_in serv_addr;
     int rsize;
     char buf[SIZE];
 
@@ -90,8 +90,7 @@ int main()
         }
         
         buf[rsize] = '\0';
-        printf("Server got a number: %s from %s:%d\n\n", buf, 
-            inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+        printf("Server got a number: %s\n\n", buf);
 
         
         task(buf);
