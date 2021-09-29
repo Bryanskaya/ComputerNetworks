@@ -3,12 +3,12 @@
 
 int main()
 {
-    int sock;
+    int sock, res = 0, num;
     struct hostent *server;
     struct sockaddr_in serv_addr;
     char buf[100];
     
-    sock = socket(AF_INET, SOCK_STREAM, 0);
+    sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sock < 0)
     {
         perror("ERROR: socket() failed");
@@ -16,36 +16,35 @@ int main()
     }
 
     server = gethostbyname(HOST);
-    if (!server) {
-        close(sock);
+    if (!server) 
+    {
         perror("ERROR: gethostbyname() failed");
+        close(sock);
         return EXIT_FAILURE;
     }
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr = *((struct in_addr*) server->h_addr_list[0]);    
     serv_addr.sin_port = htons(PORT);
-    
-    if (connect(sock, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0)
+
+    printf(">>> Input number: ");
+    if (scanf("%d", &num) < 0)
     {
-        close(sock);
-        perror("ERROR: connect() failed");
+        printf("ERROR: wrong number\n");
         return EXIT_FAILURE;
     }
 
-    for (int i = 0; i < NUM; i++)
+    sprintf(buf, "%d", num);
+
+    if (sendto(sock, buf, strlen(buf), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
-        scanf("%s", buf);
-
-        if (send(sock, buf, strlen(buf), 0) < 0)
-        {
-            close(sock);
-            perror("ERROR: send() failed");
-            return EXIT_FAILURE;
-        }
-        
-        printf("Client sent: %s\n", buf);
+        close(sock);
+        perror("ERROR: send() failed");
+        return EXIT_FAILURE;
     }
+    
+    printf("Client sent: %s\n", buf);
+    close(sock);
 
-    return 0;
+    return res;
 }
