@@ -7,3 +7,5 @@
 [Клиент-серверное приложение, использующее транспортный протокол UDP](https://github.com/Bryanskaya/ComputerNetworks/tree/main/lab02)
 
 [Настройка сетевых служб: DNS, HTTP, электронной почты](https://github.com/Bryanskaya/ComputerNetworks/tree/main/lab04)
+
+[Smtp-клиент](https://github.com/Bryanskaya/ComputerNetworks/tree/main/lab05)
