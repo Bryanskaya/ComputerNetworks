@@ -21,7 +21,7 @@
 
 
 #define HOST                "127.0.0.1"
-#define PORT                8000
+#define PORT                8001
 #define NUM                 5
 #define SIZE                100
 #define BASE_PATH           "./"
